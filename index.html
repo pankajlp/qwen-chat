@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Qwen Chat</title>
+<script>
+  try {
+    const t = JSON.parse(localStorage.getItem('qc.settings'))?.theme;
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch {}
+</script>
+<link rel="stylesheet" href="vendor/fonts.css" />
+<link rel="stylesheet" href="vendor/github-dark.min.css" />
+<script src="vendor/marked.min.js"></script>
+<script src="vendor/purify.min.js"></script>
+<script src="vendor/highlight.min.js"></script>
+<script src="jev-calibration.js"></script>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<aside id="sidebar">
+  <div class="side-top">
+    <div class="brand">Qwen Chat</div>
+    <button class="icon-btn" id="close-side" title="Hide sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+    </button>
+  </div>
+  <button class="new-chat" id="new-chat" title="New chat">
+    <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    <span class="lbl">New chat</span>
+  </button>
+  <button class="nav-item rail-only" id="rail-search" title="Search chats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+  </button>
+  <button class="nav-item" id="nav-code" title="Code: work on a project folder">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
+    <span class="lbl">Code</span>
+  </button>
+  <button class="nav-item" id="nav-chats" title="Chats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg>
+    <span class="lbl">Chats</span>
+  </button>
+  <label class="search" id="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="search" id="search" placeholder="Search chats" autocomplete="off" spellcheck="false" />
+    <kbd>⌘K</kbd>
+    <button id="clear-search" title="Clear search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </label>
+  <div class="side-label" id="list-label">Recents</div>
+  <div id="chat-list"></div>
+  <div class="side-foot">
+    <button class="profile" id="profile-btn" title="Account and backups">
+      <span class="pfp">P</span>
+      <span class="pinfo"><span class="pname">Pankaj</span><span class="pplan"><span class="dot" id="status-dot"></span><span id="status-text">Connecting…</span></span></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+    </button>
+    <div class="menu backup" id="profile-menu">
+      <button id="import" title="Import chats from a JSON backup or export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>Import chats</button>
+      <button id="export-all" title="Download all chats as a JSON backup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export all chats</button>
+      <button id="profile-connectors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-12 0zM12 17v5"/></svg>Connectors</button>
+      <button id="profile-skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5M9 7h6M9 11h6"/></svg>Skills</button>
+      <button id="profile-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</button>
+      <input type="file" id="import-input" accept=".json,application/json" hidden />
+    </div>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <button class="icon-btn" id="open-side" title="Show sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+    </button>
+    <div id="chat-title"></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="settings-btn" title="Custom instructions (system prompt)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+    </button>
+    <button class="icon-btn" id="theme-btn"></button>
+    <div class="export">
+      <button class="icon-btn" id="export-btn" title="Export this chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>Export</span>
+      </button>
+      <div class="menu" id="export-menu">
+        <button data-export="md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Markdown<small>.md</small></button>
+        <button data-export="json"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H7a2 2 0 00-2 2v4l-2 2 2 2v4a2 2 0 002 2h1M16 4h1a2 2 0 012 2v4l2 2-2 2v4a2 2 0 01-2 2h-1"/></svg>JSON<small>.json</small></button>
+        <button data-export="print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6M7 18H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg>Print / Save as PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="scroll">
+    <div id="empty">
+      <h1><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg><span id="greeting">Hello</span></h1>
+      <p id="privacy-line">Running locally on your machine — nothing leaves your computer.</p>
+    </div>
+    <div id="messages-wrap"><h1 id="print-title"></h1><p hidden id="print-meta"></p><div id="messages"></div></div>
+  </div>
+
+  <div class="composer-wrap">
+    <div class="talk" id="talk" hidden data-state="listening">
+      <div class="talk-orb"></div>
+      <div class="talk-text"><div id="talk-state">Listening…</div><div id="talk-caption"></div></div>
+      <button class="btn" id="talk-pause" title="Mute the microphone">Pause</button>
+      <button class="btn end" id="talk-end" title="End the conversation (Esc)">End</button>
+    </div>
+    <div class="composer">
+      <div id="attachments"></div>
+      <textarea id="input" rows="1" placeholder="How can I help you today?" autofocus></textarea>
+      <div class="composer-row">
+        <div class="composer-left">
+          <button class="icon-btn" id="attach" title="Attach files (PDF, Word, text, code, CSV…)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 01-7.8-7.8l8.6-8.6a3.7 3.7 0 015.2 5.2l-8.6 8.6a1.8 1.8 0 01-2.6-2.6L15 7.3"/></svg>
+          </button>
+          <input type="file" id="file-input" multiple hidden />
+          <div class="tools">
+            <button class="icon-btn" id="tools-btn" title="Search and tools">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+            </button>
+            <div class="menu tools-menu" id="tools-menu">
+              <div class="toggle" id="think-toggle" title="Let the model reason before answering (slower, smarter)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                <span>Extended thinking</span><div class="switch"></div>
+              </div>
+              <div class="toggle" id="jev-toggle" title="Jev mode: answer as a typed decision with a probability for every option, like TypeSafe's Jev (runs on your local Qwen)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                <span>Jev mode</span><div class="switch"></div>
+              </div>
+            </div>
+          </div>
+          <button class="icon-btn" id="mic" title="Voice input — transcribed on this device">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+          </button>
+          <button class="icon-btn" id="talk-btn" title="Talk: a hands-free voice conversation. Speak, and Qwen answers out loud — all on this device.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg>
+          </button>
+          <div class="menu code-menu" id="code-menu">
+            <button data-code="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M12 10v6M9 13h6"/></svg>New project<small>~/QwenProjects</small></button>
+            <button data-code="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Open a folder…</button>
+            <button data-code="reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M10 14L21 3M19 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h5"/></svg>Show in Finder</button>
+            <button data-code="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Leave Code mode</button>
+          </div>
+          <button class="web-toggle" id="code-btn" aria-pressed="false" title="Code mode: Qwen works inside a project folder. It reads files on its own and asks before editing files or running commands.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg><span id="code-label">Code</span><span id="code-off" title="Leave Code mode">×</span>
+          </button>
+          <button class="web-toggle" id="acct-btn" aria-pressed="false" hidden title="Accounts: let Qwen use your connected Google, Microsoft and X accounts in this chat. It reads on its own and asks before sending or posting anything."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-12 0zM12 17v5"/></svg>Accounts</button>
+          <button class="web-toggle" id="auto-btn" aria-pressed="false" title="Auto: for each message, Qwen decides whether to search the web, fact-check the answer, think step by step, or ask you a clarifying question.">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg>Auto
+          </button>
+          <button class="web-toggle" id="web-btn" aria-pressed="false" title="Search the web before answering. Your question is sent to DuckDuckGo and the top pages are fetched from their sites.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>Search
+          </button>
+          <button class="web-toggle" id="verify-btn" aria-pressed="false" title="Verify: after answering, Qwen lists the facts it stated, checks each one independently with calibrated Jev scoring, and rewrites the answer to drop or flag doubtful ones.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Verify
+          </button>
+          <div class="rec" id="rec" hidden>
+            <span class="rec-dot"></span><span id="rec-time">0:00</span>
+            <span class="level" id="level"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="seg" id="voice-speed" role="group" aria-label="Transcription quality">
+              <button type="button" data-speed="fast" title="Fast — final text in about a second or two. Great for English.">Fast</button>
+              <button type="button" data-speed="accurate" title="Accurate — Whisper medium double-checks everything after you stop. Slower, better for Hindi and other languages.">Accurate</button>
+            </span>
+            <select id="voice-lang" title="Language you're speaking">
+              <option value="">Auto-detect</option>
+              <option value="english">English</option>
+              <option value="hindi">हिन्दी Hindi</option>
+              <option value="marathi">मराठी Marathi</option>
+              <option value="bengali">বাংলা Bengali</option>
+              <option value="gujarati">ગુજરાતી Gujarati</option>
+              <option value="punjabi">ਪੰਜਾਬੀ Punjabi</option>
+              <option value="tamil">தமிழ் Tamil</option>
+              <option value="telugu">తెలుగు Telugu</option>
+              <option value="urdu">اردو Urdu</option>
+              <option value="spanish">Español</option>
+              <option value="french">Français</option>
+              <option value="german">Deutsch</option>
+            </select>
+            <button id="rec-cancel" title="Discard recording (Esc)">Cancel</button>
+            <button id="rec-stop" title="Stop and transcribe"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>Stop</button>
+          </div>
+          <span class="voice-status" id="voice-status" hidden><span class="spinner"></span><span id="voice-status-text"></span></span>
+          <span class="hint">Enter to send · Shift+Enter for new line</span>
+        </div>
+        <div class="composer-right">
+          <select id="model" title="Model"></select>
+          <button id="send" title="Send" disabled></button>
+        </div>
+      </div>
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip" data-prompt="Help me write a short, friendly email to "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>Write</button>
+      <button class="chip" data-prompt="Explain this to me simply, like I'm new to it: "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>Learn</button>
+      <button class="chip" data-prompt="Write a Python script that "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Code</button>
+      <button class="chip" data-prompt="Help me plan "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>Life stuff</button>
+      <button class="chip" data-prompt="Surprise me with something interesting I probably don't know."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>Qwen's choice</button>
+    </div>
+    <div class="disclaimer" id="disclaimer">Qwen can make mistakes. Please double-check responses.</div>
+  </div>
+</main>
+<dialog id="skills-dlg">
+  <div class="dlg-head">
+    <h2>Skills</h2>
+    <button class="icon-btn" id="skills-close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="dlg-body">
+    <p>Skills are packaged instructions for particular kinds of work: test-driven development, debugging, research, PDFs, spreadsheets and more. Type <b>/</b> in any chat to use one, for example <code>/grilling my plan to switch jobs</code>. In Code and Accounts mode Qwen also picks the right skill by itself.</p>
+    <div id="skills-list"></div>
+    <p class="conn-note">Skills live in <code>qwen-chat/skills</code>. To add your own, make a folder there with a SKILL.md (name and description at the top), then reload. Sources and licences: <code>skills/SOURCES.md</code>.</p>
+  </div>
+</dialog>
+<dialog id="conn-dlg">
+  <div class="dlg-head">
+    <h2>Connectors</h2>
+    <button class="icon-btn" id="conn-close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="dlg-body">
+    <p>Let Qwen search and read your email, calendar and files, and draft emails, invites and posts for you. Qwen talks to Google, Microsoft and X directly from this Mac, sign-ins are kept in your macOS Keychain, and none of this is reachable from the public link. <b>Qwen always shows you an email, invite or post and waits for your OK before it goes out.</b></p>
+    <div id="conn-list"></div>
+    <p class="conn-foot">Then turn on <b>Accounts</b> under the message box in any chat.</p>
+  </div>
+</dialog>
+<div id="drop"><div>Drop files to add to chat<small>PDF, Word, text, code, CSV, JSON…</small></div></div>
+<div id="toast"></div>
+<div id="hl-pop" role="tooltip"></div>
+<dialog id="settings-dlg">
+  <form method="dialog" id="settings-form">
+    <div class="dlg-head">
+      <h2>Custom instructions</h2>
+      <button class="icon-btn" value="cancel" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="dlg-body">
+      <p>A system prompt Qwen follows in every chat, including chats you already have. Use it for who you are, how you like answers, or a role for the model to play.</p>
+      <textarea id="sys-prompt" maxlength="8000" spellcheck="true" placeholder="e.g. I'm a Python developer. Keep answers short and practical, and show code before explanations."></textarea>
+      <div class="presets"><span>Add:</span>
+        <button type="button" data-preset="Be concise. Skip preambles and get straight to the answer.">Concise</button>
+        <button type="button" data-preset="Explain things simply, as if to a curious beginner, with a concrete example.">Beginner-friendly</button>
+        <button type="button" data-preset="When writing code, include brief comments and mention any edge cases.">Coder</button>
+        <button type="button" data-preset="Always reply in Hindi.">Reply in Hindi</button>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="share-time" />
+        <span>Tell Qwen the current date and time<small id="share-time-preview"></small></span>
+      </label>
+      <div class="mem">
+        <label class="check" style="margin: 0; padding: 0; border: 0;">
+          <input type="checkbox" id="mem-on" />
+          <span>Remember things about me across chats<small>Qwen saves lasting facts you mention (name, job, preferences…) and uses them when relevant. Stored only in this browser; sensitive topics are skipped unless you ask.</small></span>
+        </label>
+        <div class="mem-list" id="mem-list"></div>
+        <div class="cal-actions"><button type="button" class="btn" id="mem-clear">Forget everything</button><span class="mem-note" id="mem-count"></span></div>
+      </div>
+      <div class="cal">
+        <div class="cal-title">Jev mode calibration</div>
+        <p id="cal-status"></p>
+        <div class="cal-progress" id="cal-progress" hidden><div class="bar"><i id="cal-bar"></i></div><span id="cal-progress-text"></span></div>
+        <div class="cal-actions">
+          <button type="button" class="btn" id="cal-run">Calibrate</button>
+          <button type="button" class="btn" id="cal-reset">Reset</button>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <span id="sys-count"></span>
+      <button type="button" class="btn" id="sys-clear">Clear</button>
+      <button class="btn" value="cancel">Cancel</button>
+      <button class="btn primary" value="save" id="sys-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/core.js"></script>
+<script src="js/attachments.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/memory.js"></script>
+<script src="js/talk.js"></script>
+<script src="js/export-import.js"></script>
+<script src="js/web-search.js"></script>
+<script src="js/answer-checks.js"></script>
+<script src="js/jev.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/code-mode.js"></script>
+<script src="js/connectors.js"></script>
+<script src="js/skills.js"></script>
+<script src="js/start.js"></script>
+</body>
+</html>

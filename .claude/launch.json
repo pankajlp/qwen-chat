@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "qwen-chat", "url": "http://localhost:8766", "port": 8766 }
+  ]
+}

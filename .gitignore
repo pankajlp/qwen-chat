@@ -1,0 +1,8 @@
+.DS_Store
+__pycache__/
+*.pyc
+# Local backups made while editing
+backup-before-*/
+index.backup-*.html
+# Browser Whisper weights (~1.2 GB); get them with ./fetch-models.sh
+vendor/models/*/onnx/
