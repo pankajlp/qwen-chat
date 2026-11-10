@@ -143,7 +143,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _index(self):
         with open(os.path.join(ROOT, "index.html"), "rb") as f:
             body = f.read()
-        if not self.public:
+        # Only for requests addressed to this machine by name (or the owner's devices): a page reached
+        # through another host name (DNS rebinding) must not be handed the token.
+        if self._local_host():
             body = body.replace(b"</head>", f'<meta name="code-token" content="{CODE_TOKEN}" />\n</head>'.encode(), 1)
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")

@@ -70,6 +70,8 @@ class ServerRules(unittest.TestCase):
     # ---- this Mac (local listener)
     def test_local_page_has_token(self):
         self.assertIn('name="code-token"', req(self.port, "/")[1])
+        # not for a page reached under another host name (DNS rebinding)
+        self.assertNotIn('name="code-token"', req(self.port, "/", host="evil.example")[1])
 
     def test_code_needs_token(self):
         body = {"root": self.project, "name": "read_file", "args": {"path": "hello.txt"}}
